@@ -16,7 +16,7 @@ namespace ImageUnscrambler
 
         private static void Main(string[] args)
         {
-            while(true)
+            while (true)
             {
                 var rows = Prompt<int>("Enter rows", int.TryParse);
                 var cols = Prompt<int>("Enter columns", int.TryParse);
@@ -25,25 +25,40 @@ namespace ImageUnscrambler
                 if (Directory.Exists(path))
                 {
                     var isRecursive = Prompt<bool>("Recursive?", bool.TryParse);
+                    var isFoldered = Prompt<bool>("Output folder?", bool.TryParse);
+
                     var images = GetImagesFromFolder(path, isRecursive);
-                    foreach (var image in images) UnscrambleImage(rows, cols, image);
+                    foreach (var image in images) UnscrambleImage(rows, cols, image, isFoldered);
                 }
                 else if (File.Exists(path))
-                    UnscrambleImage(rows, cols, path);
+                    UnscrambleImage(rows, cols, path, false);
                 else
                     Console.WriteLine("No image was found.");
             }
         }
 
-        private static void SaveImage(Image result, string path)
+        private static void SaveImage(Image result, string path, bool isFoldered)
         {
-            var fileName = Path.Combine(
-                Path.GetDirectoryName(path) ?? string.Empty,
-                $"{Path.GetFileNameWithoutExtension(path)}_reversed.png");
-            result.Save(fileName, ImageFormat.Png);
+            if (isFoldered)
+            {
+                var dir = Path.Combine(Path.GetDirectoryName(path)!, "output");
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+                path = Path.Combine(dir, Path.GetFileNameWithoutExtension(path),
+                    ".png");
+            }
+            else
+            {
+                path = Path.Combine(
+                    Path.GetDirectoryName(path)!,
+                    Path.GetFileNameWithoutExtension(path),
+                    "_reversed.png");
+            }
+
+            result.Save(path, ImageFormat.Png);
         }
 
-        private static void UnscrambleImage(int rows, int cols, string path)
+        private static void UnscrambleImage(int rows, int cols, string path, bool isFoldered)
         {
             var image = Image.FromFile(path);
             image = image
@@ -51,7 +66,7 @@ namespace ImageUnscrambler
                 .InvertAxis()
                 .CombineImages(image.Width, image.Height);
 
-            SaveImage(image, path);
+            SaveImage(image, path, isFoldered);
         }
 
         private static IEnumerable<string> GetImagesFromFolder(string path, bool isRecursive = false)
@@ -83,8 +98,10 @@ namespace ImageUnscrambler
         private static T Prompt<T>(string question, TryParseEnum<T> tryParse)
         {
             while (true)
+            {
                 if (tryParse(Prompt(question), out var result))
                     return result;
+            }
         }
 
         private delegate bool TryParseEnum<T>(string input, out T result);
