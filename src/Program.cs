@@ -44,14 +44,13 @@ namespace ImageUnscrambler
                 var dir = Path.Combine(Path.GetDirectoryName(path)!, "output");
                 if (!Directory.Exists(dir))
                     Directory.CreateDirectory(dir);
-                path = Path.Combine(dir, Path.GetFileNameWithoutExtension(path),
-                    ".png");
+                path = Path.Combine(dir, Path.GetFileNameWithoutExtension(path) + ".png");
             }
             else
             {
                 path = Path.Combine(
                     Path.GetDirectoryName(path)!,
-                    Path.GetFileNameWithoutExtension(path),
+                    Path.GetFileNameWithoutExtension(path) + 
                     "_reversed.png");
             }
 
