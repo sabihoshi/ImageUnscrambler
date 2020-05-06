@@ -57,6 +57,7 @@ namespace ImageUnscrambler
             var bitmap = new Bitmap(width, height);
             using (var g = Graphics.FromImage(bitmap))
             {
+                g.Clear(Color.White);
                 for (var y = 0; y < images.Length; y++)
                 {
                     for (var x = 0; x < images[y].Length; x++)
