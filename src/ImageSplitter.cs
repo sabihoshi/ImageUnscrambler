@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 
 namespace ImageUnscrambler
 {
@@ -29,12 +29,24 @@ namespace ImageUnscrambler
 
         public static Image[][] InvertAxis(this Image[][] images)
         {
-            var ret = new Image[images.Length][];
+            var row = images.Length;
+            var col = images[0].Length;
+            var ret = new Image[row][];
 
-            for (var y = 0; y < images.Length; y++)
+            var x = 0;
+            var y = 0;
+
+            for (var i = 0; i < row; i++)
             {
-                ret[y] = new Image[images[y].Length];
-                for (var x = 0; x < images[y].Length; x++) ret[y][x] = images[x][y];
+                for (var j = 0; j < col; j++)
+                {
+                    ret[y] ??= new Image[col];
+
+                    ret[y][x] = images[i][j];
+
+                    y = (y + 1) % images.Length;
+                    x = y == 0 ? x + 1 : x;
+                }
             }
 
             return ret;
