@@ -5,12 +5,12 @@ on: [push]
 
 jobs:
   get_version:
-   runs-on: ubuntu-latest
+   runs-on: windows-latest
    steps:
      - name: Build and get version
        id: build
        run: dotnet build /t:OutputPackageVersion --verbosity m | Select-String -Pattern "(?<=Version=)\d+\.\d+\.\d+$" | Foreach { $_.Matches.Value }
-       shell: pwsh
+       shell: powershell
      - uses: actions/checkout@v1
 
   get_latest:
