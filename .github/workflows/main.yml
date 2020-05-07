@@ -58,19 +58,19 @@ jobs:
               with:
                   dotnet-version: 3.1.101
 
-            - uses: actions/checkout@v2.1.0
             - name: Build with dotnet
               run: dotnet publish -r ${{ matrix.runtime }} -c Release -p:PublishSingleFile=true -p:PublishTrimmed=true -o ./output/
 
             - name: Zip artifacts
-              run: zip --junk-paths -r ./${{ matrix.runtime }}-artifact.zip ./output/
+              run: zip --junk-paths -r ./artifacts/${{ matrix.runtime }}-artifact.zip ./output/
                 
             - name: Create Release
               uses: ncipollo/release-action@v1.6.1
               with:
                   allowUpdates: true
-                  artifacts: ./output/${{ matrix.runtime }}-artifact.zip
+                  artifacts: ./artifacts/${{ matrix.runtime }}-artifact.zip
                   artifactContentType: application/zip
+                  replaceArtifacts: false
                   tag: v${{ steps.build_version.outputs.text }}
                   draft: false
                   prerelease: false
