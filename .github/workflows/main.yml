@@ -23,7 +23,7 @@ jobs:
           uses: "WyriHaximus/github-action-get-previous-tag@master"
           env:
               GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-        - if: ${{ "v" + steps.build_version.outputs !=  steps.previoustag.outputs.tag }}
+        - if: v${{ steps.build_version.outputs }} != ${{ steps.previoustag.outputs.tag }}
           run: echo "Success"
               
     build:
