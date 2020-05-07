@@ -13,41 +13,36 @@ jobs:
         dotnet-version: 3.1.101
      - uses: actions/checkout@v1
      - name: Build and get version
-       id: build
+       id: build_version
        run: dotnet build /t:OutputPackageVersion --verbosity m | Select-String -Pattern "(?<=Version=)\d+\.\d+\.\d+$" | Foreach-Object { $_.Matches.Value }
        shell: powershell
 
   get_latest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2.1.0
       - name: 'Get Previous tag'
         id: previoustag
         uses: "WyriHaximus/github-action-get-previous-tag@master"
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-  check:
-   runs-on: ubuntu-latest
-   needs: [get_version, get_latest]
-   steps:
-     - if: ${{ steps.build.outputs }} == ${{ steps.previoustag.outputs.tag }}
-       run: echo "check succeeded"
  
   create_release:
    runs-on: ubuntu-latest
-   needs: [check]
+   needs: [get_version, get_latest]
    steps:
-   - name: Create Release
-     uses: actions/create-release@v1.0.0
-     env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-     with:
-        tag_name: ${{ steps.tag.outputs.tag }}
-        release_name: Release ${{ steps.tag.outputs.tag }}
-        draft: false
-        prerelease: false
-   - uses: actions/checkout@v1
-      
+     - if: v{{ steps.build_version.outputs }} != ${{ steps.previoustag.outputs.tag }}
+     - name: Create Release
+       uses: actions/create-release@v1.0.0
+       env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+       with:
+          tag_name: v${{ steps.build.outputs }}
+          release_name: Release v${{ steps.build.outputs }}
+          draft: false
+          prerelease: false
+     - uses: actions/checkout@v2.1.0
+
   build:
     name: build
     runs-on: ubuntu-latest
