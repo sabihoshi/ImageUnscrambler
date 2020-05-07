@@ -1,0 +1,77 @@
+name: Release on Push
+on: [push]
+
+jobs:
+    check:
+        name: check
+        runs-on: ubuntu-latest
+        steps:
+        - name: Setup .NET Core
+          uses: actions/setup-dotnet@v1
+          with:
+              dotnet-version: 3.1.101
+
+        - uses: actions/checkout@v2.1.0
+        - name: Build and get version
+          id: build_version
+          run: dotnet build /t:OutputPackageVersion --verbosity m | Select-String -Pattern "(?<=Version=)\d+\.\d+\.\d+$" | Foreach-Object { echo "::set-output name=text::$($_.Matches.Value)" }
+          shell: pwsh
+
+        - uses: actions/checkout@v1
+        - name: "Get Previous tag"
+          id: previoustag
+          uses: "WyriHaximus/github-action-get-previous-tag@master"
+          env:
+              GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        - if: v${{ steps.build_version.outputs.text }} != ${{ steps.previoustag.outputs.tag }}
+          run: echo v${{ steps.build_version.outputs.text }} is made
+              
+    build:
+        name: build
+        runs-on: ubuntu-latest
+        needs: [check]
+        strategy:
+            fail-fast: false
+            matrix:
+                runtime: ["win-x64", "win-x86", "linux-x64", "osx-x64"]
+        steps:
+            - name: Setup .NET Core
+              uses: actions/setup-dotnet@v1
+              with:
+                  dotnet-version: 3.1.101
+
+            - uses: actions/checkout@v2.1.0
+            - name: Build and get version
+              id: build_version
+              run: dotnet build /t:OutputPackageVersion --verbosity m | Select-String -Pattern "(?<=Version=)\d+\.\d+\.\d+$" | Foreach-Object { echo "::set-output name=text::$($_.Matches.Value)" }
+              shell: pwsh
+
+            - uses: actions/checkout@v1
+            - name: "Get Previous tag"
+              id: previoustag
+              uses: "WyriHaximus/github-action-get-previous-tag@master"
+              env:
+                  GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+            - name: Setup .NET Core
+              uses: actions/setup-dotnet@v1
+              with:
+                  dotnet-version: 3.1.101
+
+            - name: Build with dotnet
+              run: dotnet publish -r ${{ matrix.runtime }} -c Release -p:PublishSingleFile=true -p:PublishTrimmed=true -o ./output/
+
+            - name: Zip artifacts
+              run: zip --junk-paths -r ./${{ matrix.runtime }}-artifact.zip ./output/
+                
+            - name: Create Release
+              uses: ncipollo/release-action@v1.6.1
+              with:
+                  allowUpdates: true
+                  artifacts: ./${{ matrix.runtime }}-artifact.zip
+                  artifactContentType: application/zip
+                  replaceArtifacts: false
+                  tag: v${{ steps.build_version.outputs.text }}
+                  draft: false
+                  prerelease: false
+                  token: ${{ secrets.GITHUB_TOKEN }}
