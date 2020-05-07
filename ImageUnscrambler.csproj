@@ -21,4 +21,8 @@
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
   </ItemGroup>
 
+  <Target Name="OutputPackageVersion" AfterTargets="Build">
+    <Message Importance="High" Text="Version=$(Version)" />
+  </Target>
+
 </Project>
