@@ -31,8 +31,8 @@ jobs:
    runs-on: ubuntu-latest
    needs: [get_version, get_latest]
    steps:
-     - if: v{{ steps.build_version.outputs }} != ${{ steps.previoustag.outputs.tag }}
      - name: Create Release
+       if: v{{ steps.build_version.outputs }} != ${{ steps.previoustag.outputs.tag }}
        uses: actions/create-release@v1.0.0
        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
