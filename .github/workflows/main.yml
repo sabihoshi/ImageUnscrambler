@@ -67,12 +67,11 @@ jobs:
                 
             - name: Create Release
               uses: ncipollo/release-action@v1.6.1
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
                   allowUpdates: true
                   artifact: ./artifact.zip
                   artifactContentType: application/zip
                   tag: v${{ steps.build_version.outputs }}
                   draft: false
-                  prerelease: false 
+                  prerelease: false
+                  token: ${{ secrets.GITHUB_TOKEN }}
