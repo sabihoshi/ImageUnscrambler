@@ -2,8 +2,38 @@ name: Release on Push
 on: [push]
 
 jobs:
-    create_release:
+    check:
+        name: check
         runs-on: ubuntu-latest
+        steps:
+        - name: Setup .NET Core
+          uses: actions/setup-dotnet@v1
+          with:
+              dotnet-version: 3.1.101
+
+        - uses: actions/checkout@v2.1.0
+        - name: Build and get version
+          id: build_version
+          run: dotnet build /t:OutputPackageVersion --verbosity m | Select-String -Pattern "(?<=Version=)\d+\.\d+\.\d+$" | Foreach-Object { $_.Matches.Value }
+          shell: pwsh
+
+        - uses: actions/checkout@v1
+        - name: "Get Previous tag"
+          id: previoustag
+          uses: "WyriHaximus/github-action-get-previous-tag@master"
+          env:
+              GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        - if: ${{ "v" + steps.build_version.outputs !=  steps.previoustag.outputs.tag }}
+          run: echo "Success"
+              
+    build:
+        name: build
+        runs-on: ubuntu-latest
+        needs: [check]
+        strategy:
+            fail-fast: false
+            matrix:
+                runtime: ["win-x64", "win-x86", "linux-x64", "osx-x64"]
         steps:
             - name: Setup .NET Core
               uses: actions/setup-dotnet@v1
@@ -23,34 +53,6 @@ jobs:
               env:
                   GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
-            - name: Create Release
-              if: v{{ steps.build_version.outputs }} != ${{ steps.previoustag.outputs.tag }}
-              uses: actions/create-release@v1.0.0
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              with:
-                  tag_name: v${{ steps.build.outputs }}
-                  release_name: Release v${{ steps.build.outputs }}
-                  draft: false
-                  prerelease: false
-            - name: Save upload url
-              run: ${{ steps.create_release.outputs.upload_url }} > ./upload_url.txt
-            - name: Upload url to artifacts
-              uses: actions/upload-artifact@v2
-              with:
-                  name: upload
-                  path: url.txt
-                
-
-    build:
-        name: build
-        runs-on: ubuntu-latest
-        needs: [create_release]
-        strategy:
-            fail-fast: false
-            matrix:
-                runtime: ["win-x64", "win-x86", "linux-x64", "osx-x64"]
-        steps:
             - name: Setup .NET Core
               uses: actions/setup-dotnet@v1
               with:
@@ -62,25 +64,15 @@ jobs:
 
             - name: Zip artifacts
               run: zip --junk-paths -r ./artifact.zip ./output/
-              
-            - name: Download upload url
-              uses: actions/download-artifact@v2
-              with:
-                  name: upload
-
-            - name: Read upload url
-              id: upload
-              uses: pCYSl5EDgo/cat@1.0.0
-              with:
-                path: upload/url.txt
-
-            - name: Upload Release Asset
-              id: upload-release-asset
-              uses: actions/upload-release-asset@v1.0.1
+                
+            - name: Create Release
+              uses: ncipollo/release-action@v1.6.1
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
-                  upload_url: ${{ steps.upload.outputs.text }}
-                  asset_path: ./artifact.zip
-                  asset_name: ${{ matrix.runtime }}.zip
-                  asset_content_type: application/zip
+                  allowUpdates: true
+                  artifact: ./artifact.zip
+                  artifactContentType: application/zip
+                  tag: v${{ steps.build_version.outputs }}
+                  draft: false
+                  prerelease: false 
