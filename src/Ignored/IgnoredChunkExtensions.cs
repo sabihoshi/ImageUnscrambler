@@ -22,7 +22,7 @@ namespace ImageUnscrambler.Ignored
                 case Position.Left:
                 case Position.Right:
                     retWidth -= pixels;
-                    removedHeight = pixels;
+                    removedWidth = pixels;
                     break;
             }
 
