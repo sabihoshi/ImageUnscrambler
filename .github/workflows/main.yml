@@ -11,11 +11,11 @@ jobs:
        uses: actions/setup-dotnet@v1
        with: 
         dotnet-version: 3.1.101
+     - uses: actions/checkout@v1
      - name: Build and get version
        id: build
        run: dotnet build /t:OutputPackageVersion --verbosity m | Select-String -Pattern "(?<=Version=)\d+\.\d+\.\d+$" | Foreach-Object { $_.Matches.Value }
        shell: powershell
-     - uses: actions/checkout@v1
 
   get_latest:
     runs-on: ubuntu-latest
